@@ -1,14 +1,24 @@
-# Trình quản lý gói
-node_modules/
-__pycache__/
-venv/
-.next/
-dist/
-
-# Bí mật quốc gia (API Keys)
+# === BẢO MẬT (Quan trọng nhất) ===
 .env
-.env.local
 Open AI API.md
+*.md   # (Tùy chọn) Nếu bạn muốn chặn tất cả file .md chứa tài liệu cá nhân
 
-# Các file rác của hệ thống
+# === BACKEND (Python) ===
+backend/__pycache__/
+backend/venv/
+backend/.env
+*.pyc
+
+# === FRONTEND (Next.js / React) ===
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# === HỆ THỐNG ===
 .DS_Store
+Thumbs.db
