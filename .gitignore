@@ -1,0 +1,14 @@
+# Trình quản lý gói
+node_modules/
+__pycache__/
+venv/
+.next/
+dist/
+
+# Bí mật quốc gia (API Keys)
+.env
+.env.local
+Open AI API.md
+
+# Các file rác của hệ thống
+.DS_Store
