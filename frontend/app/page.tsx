@@ -25,6 +25,25 @@ export default function Home() {
     try {
       // BƯỚC 1: Gọi API và đợi phản hồi (Lúc này mới tạo ra biến 'res')
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://ai-mindmap-eqi0.onrender.com";
+      const handleUpload = async (file: File) => {
+  // Debug: In ra để xem nó có lấy được link Render không
+  console.log("Đang gọi tới địa chỉ:", API_URL);
+
+  if (!API_URL) {
+    alert("Lỗi: Chưa cấu hình địa chỉ API!");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_URL}/process-pdf`, { // Thay /process-pdf bằng endpoint thật của bạn
+    method: "POST",
+    body: formData,
+  });
+  
+  // ... xử lý tiếp
+};
       const res = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         body: formData,
