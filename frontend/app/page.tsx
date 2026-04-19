@@ -36,8 +36,7 @@ export default function Home() {
 
   const formData = new FormData();
   formData.append("file", file);
-
-  const response = await fetch(`${API_URL}/process-pdf`, { // Thay /process-pdf bằng endpoint thật của bạn
+  const response = await fetch(`${API_URL}/upload`, { // Thay /process-pdf bằng endpoint thật của bạn
     method: "POST",
     body: formData,
   });
