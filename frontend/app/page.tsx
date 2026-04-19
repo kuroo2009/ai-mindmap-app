@@ -24,7 +24,8 @@ export default function Home() {
 
     try {
       // BƯỚC 1: Gọi API và đợi phản hồi (Lúc này mới tạo ra biến 'res')
-      const res = await fetch('http://127.0.0.1:8000/upload', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://ai-mindmap-eqi0.onrender.com";
+      const res = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         body: formData,
       });
