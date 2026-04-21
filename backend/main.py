@@ -1,7 +1,7 @@
 import os
 import io
 import json
-import re  # Đưa lên đầu để dùng chung
+import re
 from fastapi import FastAPI, UploadFile, File
 import fitz  # PyMuPDF
 from docx import Document
@@ -12,7 +12,6 @@ from supabase import create_client, Client
 
 load_dotenv()
 
-# --- CẤU HÌNH HỆ THỐNG ---
 app = FastAPI()
 
 app.add_middleware(
@@ -34,32 +33,31 @@ client = OpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY"),
 )
 
-# --- HÀM BỔ TRỢ ---
-
 async def ask_ai(text_content):
     response = client.chat.completions.create(
         model="openai/gpt-oss-20b:free", 
         messages=[
             {
                 "role": "system", 
-                "content": "Bạn là chuyên gia giáo dục. Hãy tóm tắt văn bản thành JSON gồm 'Mindmap' (term, short_desc, detail, metaphor, example) và 'quizzes' (question, options, correct_answer). CHỈ TRẢ VỀ DỮ LIỆU JSON, KHÔNG GIẢI THÍCH, KHÔNG CHÀO HỎI."            },
+                "content": "Bạn là chuyên gia giáo dục. Hãy tóm tắt văn bản thành JSON gồm 'Mindmap' (term, short_desc, detail, metaphor, example) và 'quizzes' (question, options, correct_answer). CHỈ TRẢ VỀ DỮ LIỆU JSON, KHÔNG GIẢI THÍCH, KHÔNG CHÀO HỎI."
+            },
             {
                 "role": "user", 
-                "content": f"Nội dung: {text_content[:8000]}"
+                "content": f"Đây là nội dung tài liệu: {text_content[:8000]}"
             }
         ],
         response_format={ "type": "json_object" }
     )
+    
+    # Lấy nội dung thô từ AI
     content = response.choices[0].message.content
     
-    # TỐI ƯU: Làm sạch JSON ngay tại đây trước khi trả về
+    # Làm sạch chuỗi JSON ngay tại đây
     try:
-        match = re.search(r'\{.*\}', content, re.DOTALL)
-        return match.group(0) if match else content
+        match = re.search(r"(\{.*\})", content, re.DOTALL)
+        return match.group(1) if match else content
     except:
         return content
-
-# --- ENDPOINT CHÍNH ---
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
@@ -79,36 +77,29 @@ async def upload_file(file: UploadFile = File(...)):
     if not text.strip():
         return {"error": "Không thể trích xuất văn bản từ file."}
 
-    # 2. Gửi text sang AI
+    # 2. Gửi sang AI và xử lý JSON
     ai_result_raw = await ask_ai(text)
     
-    # 3. Xử lý và Parse JSON để kiểm tra tính hợp lệ
-    final_data = None
+    final_json_data = None
     try:
-        final_data = json.loads(ai_result_raw)
+        # Chuyển chuỗi thành Object Python để lưu vào jsonb
+        final_json_data = json.loads(ai_result_raw)
     except Exception as e:
-        # Nếu lỗi, thử dùng regex lần nữa cho chắc
-        json_match = re.search(r"(\{.*\})", ai_result_raw, re.DOTALL)
-        if json_match:
-            try:
-                final_data = json.loads(json_match.group(1))
-            except:
-                pass
+        print(f"❌ Lỗi Parse JSON: {e}")
+        return {"error": "AI trả về dữ liệu rác", "debug": ai_result_raw}
 
-    if not final_data:
-        return {"error": "AI trả về dữ liệu không hợp lệ", "raw": ai_result_raw}
+    # 3. LƯU VÀO SUPABASE (Quan trọng: Phải kiểm tra dữ liệu trước khi lưu)
+    if final_json_data:
+        try:
+            db_payload = {
+                "title": str(file.filename),
+                "content": final_json_data # Đây là Object, không phải chuỗi rỗng
+            }
+            supabase.table("mindmaps").insert(db_payload).execute()
+            print(f"✅ Đã lưu '{file.filename}' vào database.")
+        except Exception as e:
+            # Nếu lỗi DB, ta in ra log nhưng vẫn cho Frontend nhận kết quả
+            print(f"❌ Lỗi Supabase: {str(e)}") 
 
-    # 4. LƯU VÀO SUPABASE (Phải làm TRƯỚC khi return)
-    try:
-        db_data = {
-            "title": file.filename,
-            "content": final_data # Lưu dạng Object JSON luôn (vì bảng dùng kiểu jsonb)
-        }
-        supabase.table("mindmaps").insert(db_data).execute()
-        print(f"✅ Đã lưu '{file.filename}' vào Supabase!")
-    except Exception as e:
-        print(f"❌ Lỗi Supabase: {e}")
-        # Không return ở đây để Frontend vẫn nhận được kết quả dù DB lỗi
-
-    # 5. CUỐI CÙNG mới trả kết quả về Frontend
-    return final_data
+    # 4. CUỐI CÙNG mới trả về kết quả cho Frontend
+    return final_json_data
