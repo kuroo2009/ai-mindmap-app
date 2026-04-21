@@ -5,6 +5,7 @@ import Mindmap from '../components/Mindmap';
 import Quiz from '../components/Quiz';
 import { supabase } from '../lib/supabase';
 import LoadingSkeleton from '../components/LoadingSkeleton';
+import HistoryDashboard from '../components/history'; // Đường dẫn tới file bạn vừa tạo
 
 interface AISummaryData {
   Mindmap: any[];
@@ -119,5 +120,27 @@ const SkeletonLoader = () => (
       )}
     </main>
   );
-  
+  function App() {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  return (
+    <div className="App">
+      <h1>AI Mindmap Generator</h1>
+      
+      {/* Khu vực hiển thị Dashboard Lịch sử */}
+      <section className="mt-8">
+        <h2 className="text-xl font-bold">Lịch sử đã tạo</h2>
+        <HistoryDashboard onSelectMindmap={(id: string) => setSelectedId(id)} />
+      </section>
+
+      {/* Khi chọn một ID, bạn sẽ gọi API lấy chi tiết để hiển thị */}
+      {selectedId && (
+        <div className="mt-4">
+          <p>Đang xem bản đồ số: {selectedId}</p>
+          {/* Component hiển thị chi tiết Mindmap sẽ nằm ở đây */}
+        </div>
+      )}
+    </div>
+  );
+}
 }
