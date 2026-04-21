@@ -9,11 +9,10 @@ from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 
-url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-key = os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+load_dotenv()
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
-
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 app = FastAPI()
 
@@ -77,11 +76,16 @@ async def upload_file(file: UploadFile = File(...)):
     ai_result_raw = await ask_ai(text)
     
     # LƯU VÀO SUPABASE
-    data = {
-        "title": file.filename,
-        "content": ai_result_raw
-    }
-    response = supabase.table("mindmaps").insert(data).execute()
+    try:
+        data = {
+            "title": file.filename,
+            "content": ai_result_raw
+        }
+        supabase.table("mindmaps").insert(data).execute()
+        print("✅ Đã lưu sơ đồ vào Supabase thành công!")
+    except Exception as e:
+        print(f"❌ Lỗi lưu database: {e}")
+    return ai_result_raw
 
     # 3. Trả về kết quả
     try:
