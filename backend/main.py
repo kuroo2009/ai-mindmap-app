@@ -7,6 +7,11 @@ from docx import Document
 from openai import OpenAI
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
+from supabase import create_client, Client
+
+url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+key = os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+supabase: Client = create_client(url, key)
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -71,6 +76,13 @@ async def upload_file(file: UploadFile = File(...)):
     # 2. Gửi text sang AI (OpenRouter)
     ai_result_raw = await ask_ai(text)
     
+    # LƯU VÀO SUPABASE
+    data = {
+        "title": file.filename,
+        "content": ai_result_raw
+    }
+    response = supabase.table("mindmaps").insert(data).execute()
+
     # 3. Trả về kết quả
     try:
         # Cách 1: Thử parse trực tiếp
