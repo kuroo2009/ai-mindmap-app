@@ -2,7 +2,7 @@ import os
 import io
 import json
 import re
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 import fitz  # PyMuPDF
 from docx import Document
 from openai import OpenAI
@@ -101,3 +101,23 @@ async def upload_file(file: UploadFile = File(...)):
         # Nếu parse lỗi, hãy kiểm tra xem AI có trả về text thừa không
         return {"error": str(e), "raw": ai_result_raw}
 
+# 1. API lấy danh sách tất cả mindmap (chỉ lấy tiêu đề và ID để nhẹ data)
+@app.get("/history")
+async def get_history():
+    try:
+        # Lấy id, title và thời gian tạo, sắp xếp mới nhất lên đầu
+        response = supabase.table("mindmaps").select("id, title, created_at").order("created_at", desc=True).execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 2. API lấy chi tiết nội dung của một mindmap cụ thể theo ID
+@app.get("/mindmap/{id}")
+async def get_mindmap_detail(id: int):
+    try:
+        response = supabase.table("mindmaps").select("*").eq("id", id).single().execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Không tìm thấy bản đồ")
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
