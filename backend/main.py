@@ -79,27 +79,25 @@ async def upload_file(file: UploadFile = File(...)):
 
     # 2. Gửi sang AI và xử lý JSON
     ai_result_raw = await ask_ai(text)
-    
-    final_json_data = None
     try:
-        # Chuyển chuỗi thành Object Python để lưu vào jsonb
+        # Bước 1: Parse chuỗi AI trả về thành Dictionary (Object Python)
+        # Nếu ai_result_raw đã là chuỗi JSON, json.loads sẽ làm sạch nó
         final_json_data = json.loads(ai_result_raw)
+        
+        # Bước 2: Lưu vào Supabase
+        # Đảm bảo truyền 'final_json_data' (là Dictionary), KHÔNG truyền 'ai_result_raw' (là String)
+        db_insert = {
+            "title": file.filename,
+            "content": final_json_data  # Supabase sẽ tự hiểu đây là JSONB
+        }
+        
+        response = supabase.table("mindmaps").insert(db_insert).execute()
+        
+        # Bước 3: Trả về chính Object đó cho Frontend
+        return final_json_data
+
     except Exception as e:
-        print(f"❌ Lỗi Parse JSON: {e}")
-        return {"error": "AI trả về dữ liệu rác", "debug": ai_result_raw}
+        print(f"Error: {e}")
+        # Nếu parse lỗi, hãy kiểm tra xem AI có trả về text thừa không
+        return {"error": str(e), "raw": ai_result_raw}
 
-    # 3. LƯU VÀO SUPABASE (Quan trọng: Phải kiểm tra dữ liệu trước khi lưu)
-    if final_json_data:
-        try:
-            db_payload = {
-                "title": str(file.filename),
-                "content": final_json_data # Đây là Object, không phải chuỗi rỗng
-            }
-            supabase.table("mindmaps").insert(db_payload).execute()
-            print(f"✅ Đã lưu '{file.filename}' vào database.")
-        except Exception as e:
-            # Nếu lỗi DB, ta in ra log nhưng vẫn cho Frontend nhận kết quả
-            print(f"❌ Lỗi Supabase: {str(e)}") 
-
-    # 4. CUỐI CÙNG mới trả về kết quả cho Frontend
-    return final_json_data
