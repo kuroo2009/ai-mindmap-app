@@ -50,15 +50,6 @@ export default function Home() {
       // BƯỚC 2: Chuyển phản hồi thành JSON
       const result = await res.json();
       console.log("Dữ liệu thực tế từ AI:", result); // Kiểm tra xem có đúng là result.mindmap không
-      // Lưu sơ đồ vào Supabase
-      const { data, error: dbError } = await supabase
-  .from('mindmaps')
-  .insert([{ title: File.name, content: result.mindmap }]);
-
-if (dbError) {
-  alert("Lỗi Supabase: " + dbError.message);
-  console.log(dbError);
-}
 
       if (result.error) {
         alert("AI đang bị 'say nắng', bạn hãy thử upload lại file nhé!");
