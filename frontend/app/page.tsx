@@ -17,6 +17,8 @@ export default function Home() {
   const [data, setData] = useState<AISummaryData | null>(null);
   const [loading, setLoading] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
+  // THÊM DÒNG NÀY: Dùng để kích hoạt load lại lịch sử
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // 1. Logic xử lý khi bấm vào một item trong Lịch sử
   const handleSelectHistory = async (id: string) => {
@@ -54,6 +56,7 @@ export default function Home() {
         alert("AI đang bận, hãy thử lại nhé!");
       } else {
         setData(result);
+        setRefreshKey(prev => prev + 1); // Kích hoạt load lại lịch sử sau khi có dữ liệu mới
       }
     } catch (error) {
       console.error("Lỗi kết nối Backend:", error);
@@ -114,7 +117,7 @@ export default function Home() {
         
         {/* Truyền hàm handleSelectHistory vào Component History */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-          <HistoryDashboard onSelectMindmap={handleSelectHistory} />
+          <HistoryDashboard key={refreshKey} onSelectMindmap={handleSelectHistory} />
         </div>
       </section>
     </main>

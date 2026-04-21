@@ -9,7 +9,9 @@ const HistoryDashboard = ({ onSelectMindmap }) => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await axios.get('https://your-render-link.com/history');
+        const API_URL = "https://ai-mindmap-eqi0.onrender.com"; 
+        const res = await axios.get(`${API_URL}/history`);
+        console.log("Danh sách lịch sử nhận được:", res.data); // Xem ở F12 Console
         setHistory(res.data);
       } catch (err) {
         console.error("Lỗi lấy lịch sử:", err);
