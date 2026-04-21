@@ -1,6 +1,7 @@
 import os
 import io
 import json
+import re  # Đưa lên đầu để dùng chung
 from fastapi import FastAPI, UploadFile, File
 import fitz  # PyMuPDF
 from docx import Document
@@ -10,60 +11,66 @@ from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 
 load_dotenv()
-url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
 
+# --- CẤU HÌNH HỆ THỐNG ---
 app = FastAPI()
 
-# TỐI ƯU: Cấu hình CORS để Frontend có thể gọi được API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Cho phép tất cả (tốt cho việc phát triển)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Kết nối Supabase
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
 
-# Cấu hình OpenRouter
+# Kết nối OpenRouter
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=os.getenv("OPENROUTER_API_KEY"),
 )
 
+# --- HÀM BỔ TRỢ ---
+
 async def ask_ai(text_content):
     response = client.chat.completions.create(
-        # Thay model tương ứng trên OpenRouter, ví dụ: "meta-llama/llama-3-70b-instruct" 
-        # Hoặc tên chính xác của gpt-oss-120b nếu OpenRouter niêm yết vậy
         model="openai/gpt-oss-20b:free", 
         messages=[
             {
                 "role": "system", 
-                "content": "Bạn là chuyên gia giáo dục. Hãy tóm tắt văn bản thành JSON gồm 'Mindmap' (term, short_desc, detail, metaphor, example) và 'quizzes' (question, options, correct_answer). CHỈ TRẢ VỀ DỮ LIỆU JSON, KHÔNG GIẢI THÍCH, KHÔNG CHÀO HỎI."
-            },
+                "content": "Bạn là chuyên gia giáo dục. Hãy tóm tắt văn bản thành JSON gồm 'Mindmap' (term, short_desc, detail, metaphor, example) và 'quizzes' (question, options, correct_answer). CHỈ TRẢ VỀ DỮ LIỆU JSON, KHÔNG GIẢI THÍCH, KHÔNG CHÀO HỎI."            },
             {
                 "role": "user", 
-                "content": f"Đây là nội dung tài liệu: {text_content[:8000]}" # Tận dụng context window lớn hơn của OSS
+                "content": f"Nội dung: {text_content[:8000]}"
             }
         ],
         response_format={ "type": "json_object" }
     )
-    return response.choices[0].message.content
-    # TỐI ƯU: Chỉ lấy phần nằm trong cặp ngoặc nhọn đề phòng AI nói thừa
-    match = re.search(r'\{.*\}', content, re.DOTALL)
-    return match.group(0) if match else content
+    content = response.choices[0].message.content
+    
+    # TỐI ƯU: Làm sạch JSON ngay tại đây trước khi trả về
+    try:
+        match = re.search(r'\{.*\}', content, re.DOTALL)
+        return match.group(0) if match else content
+    except:
+        return content
+
+# --- ENDPOINT CHÍNH ---
+
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     contents = await file.read()
     text = ""
 
-    # 1. Trích xuất Text từ File
+    # 1. Trích xuất Text
     if file.filename.endswith(".pdf"):
         doc = fitz.open(stream=contents, filetype="pdf")
         for page in doc:
             text += page.get_text()
-            
     elif file.filename.endswith(".docx"):
         doc = Document(io.BytesIO(contents))
         for para in doc.paragraphs:
@@ -72,39 +79,36 @@ async def upload_file(file: UploadFile = File(...)):
     if not text.strip():
         return {"error": "Không thể trích xuất văn bản từ file."}
 
-    # 2. Gửi text sang AI (OpenRouter)
+    # 2. Gửi text sang AI
     ai_result_raw = await ask_ai(text)
-    print(f"DEBUG: Kết quả AI nhận được là: {ai_result_raw}")
-
-    # 3. Trả về kết quả
+    
+    # 3. Xử lý và Parse JSON để kiểm tra tính hợp lệ
+    final_data = None
     try:
-        # Cách 1: Thử parse trực tiếp
-        return json.loads(ai_result_raw)
-    except:
-        # Cách 2: Nếu lỗi, dùng Regex để tìm đúng khối { ... }
-        import re
-        try:
-            # Tìm đoạn văn bản bắt đầu bằng { và kết thúc bằng }
-            json_match = re.search(r"(\{.*\})", ai_result_raw, re.DOTALL)
-            if json_match:
-                clean_json = json_match.group(1)
-                return json.loads(clean_json)
-        except:
-            pass
-        
-        # Nếu vẫn hỏng, trả về lỗi chi tiết để bạn biết đường sửa
-        return {"error": "AI trả về rác", "debug_raw": ai_result_raw}
+        final_data = json.loads(ai_result_raw)
+    except Exception as e:
+        # Nếu lỗi, thử dùng regex lần nữa cho chắc
+        json_match = re.search(r"(\{.*\})", ai_result_raw, re.DOTALL)
+        if json_match:
+            try:
+                final_data = json.loads(json_match.group(1))
+            except:
+                pass
 
-        # LƯU VÀO SUPABASE
-    if ai_result_raw:    
-        try:
-            data = {
-                "title": file.filename,
-                "content": ai_result_raw
-            }
-            supabase.table("mindmaps").insert(data).execute()
-            print("✅ Đã lưu sơ đồ vào Supabase thành công!")
-        except Exception as e:
-            print(f"❌ Lỗi lưu database: {e}")
-    else:
-        print("⚠️ Cảnh báo: ai_result_raw bị rỗng, không thể lưu vào database.")
+    if not final_data:
+        return {"error": "AI trả về dữ liệu không hợp lệ", "raw": ai_result_raw}
+
+    # 4. LƯU VÀO SUPABASE (Phải làm TRƯỚC khi return)
+    try:
+        db_data = {
+            "title": file.filename,
+            "content": final_data # Lưu dạng Object JSON luôn (vì bảng dùng kiểu jsonb)
+        }
+        supabase.table("mindmaps").insert(db_data).execute()
+        print(f"✅ Đã lưu '{file.filename}' vào Supabase!")
+    except Exception as e:
+        print(f"❌ Lỗi Supabase: {e}")
+        # Không return ở đây để Frontend vẫn nhận được kết quả dù DB lỗi
+
+    # 5. CUỐI CÙNG mới trả kết quả về Frontend
+    return final_data
