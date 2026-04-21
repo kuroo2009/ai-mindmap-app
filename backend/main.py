@@ -74,17 +74,7 @@ async def upload_file(file: UploadFile = File(...)):
 
     # 2. Gửi text sang AI (OpenRouter)
     ai_result_raw = await ask_ai(text)
-    
-    # LƯU VÀO SUPABASE
-    try:
-        data = {
-            "title": file.filename,
-            "content": ai_result_raw
-        }
-        supabase.table("mindmaps").insert(data).execute()
-        print("✅ Đã lưu sơ đồ vào Supabase thành công!")
-    except Exception as e:
-        print(f"❌ Lỗi lưu database: {e}")
+    print(f"DEBUG: Kết quả AI nhận được là: {ai_result_raw}")
 
     # 3. Trả về kết quả
     try:
@@ -104,3 +94,17 @@ async def upload_file(file: UploadFile = File(...)):
         
         # Nếu vẫn hỏng, trả về lỗi chi tiết để bạn biết đường sửa
         return {"error": "AI trả về rác", "debug_raw": ai_result_raw}
+
+        # LƯU VÀO SUPABASE
+    if ai_result_raw:    
+        try:
+            data = {
+                "title": file.filename,
+                "content": ai_result_raw
+            }
+            supabase.table("mindmaps").insert(data).execute()
+            print("✅ Đã lưu sơ đồ vào Supabase thành công!")
+        except Exception as e:
+            print(f"❌ Lỗi lưu database: {e}")
+    else:
+        print("⚠️ Cảnh báo: ai_result_raw bị rỗng, không thể lưu vào database.")
