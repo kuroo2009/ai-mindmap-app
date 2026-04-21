@@ -85,7 +85,6 @@ async def upload_file(file: UploadFile = File(...)):
         print("✅ Đã lưu sơ đồ vào Supabase thành công!")
     except Exception as e:
         print(f"❌ Lỗi lưu database: {e}")
-    return ai_result_raw
 
     # 3. Trả về kết quả
     try:
