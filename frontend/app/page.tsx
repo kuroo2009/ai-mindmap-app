@@ -24,7 +24,7 @@ export default function Home() {
   const handleSelectHistory = async (id: string) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/mindmap/${id}`);
+      const res = await axios.get(`${API_URL}/mindmaps/${id}`);
       // Lưu ý: Backend trả về { id, title, content, ... } 
       // Chúng ta cần lấy phần 'content' để hiển thị
       setData(res.data.content); 
