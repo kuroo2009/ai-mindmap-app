@@ -2,7 +2,7 @@ import os
 import io
 import json
 import re
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header, Depends
 import fitz  # PyMuPDF
 from docx import Document
 from openai import OpenAI
