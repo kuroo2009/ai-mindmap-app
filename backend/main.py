@@ -112,12 +112,14 @@ async def get_history():
         raise HTTPException(status_code=500, detail=str(e))
 
 # 2. API lấy chi tiết nội dung của một mindmap cụ thể theo ID
-@app.get("/mindmap/{id}")
-async def get_mindmap_detail(id: int):
+@app.get("/mindmaps/{id}")
+async def get_mindmap_detail(id: str):
     try:
-        response = supabase.table("mindmaps").select("*").eq("id", id).single().execute()
+        query_id = int(id) if id.isdigit() else id
+        response = supabase.table("mindmaps").select("*").eq("id", query_id).single().execute()
         if not response.data:
             raise HTTPException(status_code=404, detail="Không tìm thấy bản đồ")
         return response.data
     except Exception as e:
+        print(f"Lỗi truy vấn: {e}")
         raise HTTPException(status_code=500, detail=str(e))
