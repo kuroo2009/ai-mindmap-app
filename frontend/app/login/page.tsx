@@ -1,39 +1,45 @@
-"use client";
-import { createBrowserClient } from '@supabase/ssr';
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { useEffect, useState } from 'react';
+import React, {useState} from "react";
+import './LoginSignup.css';
 
-export default function LoginPage() {
-  const [origin, setOrigin] = useState("");
+const LoginSignup = () => {
 
-  // Chỉ lấy origin khi đã chạy ở phía trình duyệt (Client-side)
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_KEY!
-  );
+  const [action,setAction] = useState("Sign Up");
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-xl border border-blue-50">
-        <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">
-          Đăng nhập để lưu Mindmap
-        </h1>
+    <div className="container">
+      <div className="header">
+        <div className="text">{action}</div>
+        <div className="underline"></div>
+      </div>
+      <div className="inputs">
+        {action==="Login"?<div></div>:
+        <div className="input">
+          <img src="" alt=""/>
+          <input type="text" placeholder="Username"/>
+        </div>}
         
-        {/* Chỉ hiển thị Auth khi đã xác định được origin để tránh lỗi Hydration */}
-        {origin && (
-          <Auth
-            supabaseClient={supabase}
-            appearance={{ theme: ThemeSupa }}
-            providers={['google']}
-            redirectTo={`${origin}/auth/callback`}
-          />
-        )}
+        <div className="input">
+          <img src="" alt=""/>
+          <input type="email" placeholder="Email"/>
+        </div><div className="input">
+          <img src="" alt=""/>
+          <input type="password" placeholder="Password"/>
+        </div><div className="input">
+          <img src="" alt=""/>
+          <input type="password" placeholder="Confirm Password"/>
+        </div>
+      </div>
+      {action==="Sign Up"?<div></div>:
+        <div className="forgot-password">
+        Forgot Password? <span>Click here</span>
+      </div>}
+
+      <div className="submit-container">
+        <div className={action==="Login"?"submit gray": "submit"} onClick={() => {setAction("Sign Up")}}>Sign Up</div>
+        <div className={action==="Sign Up"?"submit gray": "submit"} onClick={() => {setAction("Login")}}>Login</div>
       </div>
     </div>
   );
 }
+
+export default LoginSignup;

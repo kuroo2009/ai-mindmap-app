@@ -6,6 +6,7 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import HistoryDashboard from '../components/history'; 
 import axios from 'axios'; // Đảm bảo đã cài axios
 import Link from 'next/link';
+import LoginSignup from './login/page'; // Import trang login/signup
 
 interface AISummaryData {
   Mindmap: any[];
