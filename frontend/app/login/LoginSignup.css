@@ -5,7 +5,7 @@
     margin-top: 200px;
     width: 600px;
     padding-bottom: 30px;
-    background-color: #fff;
+    background-color: cyan;
 }
 
 .header{
@@ -13,7 +13,6 @@
     flex-direction: column;
     gap: 9px;
     width:100%;
-    margin-top: 30px;
     align-items: center;
 }
 
