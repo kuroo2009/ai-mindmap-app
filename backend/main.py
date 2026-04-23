@@ -75,7 +75,7 @@ async def get_current_user_id(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Phiên đăng nhập hết hạn")
 
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...),
+async def handle_upload(file: UploadFile = File(...),
                       user_id: str = Depends(get_current_user_id)): # Ép phải qua cổng kiểm tra
     contents = await file.read()
     text = ""
@@ -99,7 +99,8 @@ async def upload_file(file: UploadFile = File(...),
         # Bước 1: Parse chuỗi AI trả về thành Dictionary (Object Python)
         # Nếu ai_result_raw đã là chuỗi JSON, json.loads sẽ làm sạch nó
         final_json_data = json.loads(ai_result_raw)
-        
+    except Exception as e:
+        print(f"JSON Parse Error: {e}")
         # Bước 2: Lưu vào Supabase
         # Đảm bảo truyền 'final_json_data' (là Dictionary), KHÔNG truyền 'ai_result_raw' (là String)
         db_insert = {
@@ -107,11 +108,12 @@ async def upload_file(file: UploadFile = File(...),
             "content": final_json_data,  # Supabase sẽ tự hiểu đây là JSONB
             "user_id": user_id, # Lưu đúng ID người chủ sở hữu
         }
-
-        supabase.table("mindmaps").insert(db_insert).execute()
+    try:
+        response = supabase.table("mindmaps").insert(db_insert).execute()
         return final_json_data
     except Exception as e:
         print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Không thể lưu vào lịch sử")
         # Nếu parse lỗi, hãy kiểm tra xem AI có trả về text thừa không
         return {"error": str(e), "raw": ai_result_raw}
 
