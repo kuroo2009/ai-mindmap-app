@@ -7,6 +7,7 @@ import HistoryDashboard from '../components/history';
 import axios from 'axios'; // Đảm bảo đã cài axios
 import Link from 'next/link';
 import LoginSignup from './login/page'; // Import trang login/signup
+import { supabase } from '@/lib/supabase';
 
 interface AISummaryData {
   Mindmap: any[];
@@ -44,6 +45,16 @@ export default function Home() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
     setLoading(true);
+    // Lấy Token từ Supabase Session
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    if (!token) {
+    alert("Vui lòng đăng nhập để sử dụng tính năng này!");
+    setLoading(false);
+    return;
+    }
+
     const formData = new FormData();
     formData.append('file', e.target.files[0]);
 
@@ -51,6 +62,10 @@ export default function Home() {
       const res = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         body: formData,
+        headers: {
+        // Gửi token vào Header Authorization
+        'Authorization': `Bearer ${token}`
+        }
       });
       const result = await res.json();
       

@@ -59,8 +59,24 @@ async def ask_ai(text_content):
     except:
         return content
 
+# Hàm kiểm tra Token (Dependency)
+async def get_current_user_id(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập!")
+    
+    try:
+        # Tách chữ 'Bearer ' ra để lấy token
+        token = authorization.replace("Bearer ", "")
+        # Hỏi Supabase xem token này là của ai
+        user_info = supabase.auth.get_user(token)
+        return user_info.user.id
+    except Exception as e:
+        print(f"Auth Error: {e}")
+        raise HTTPException(status_code=401, detail="Phiên đăng nhập hết hạn")
+
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...),
+                      user_id: str = Depends(get_current_user_id)): # Ép phải qua cổng kiểm tra
     contents = await file.read()
     text = ""
 
@@ -88,14 +104,12 @@ async def upload_file(file: UploadFile = File(...)):
         # Đảm bảo truyền 'final_json_data' (là Dictionary), KHÔNG truyền 'ai_result_raw' (là String)
         db_insert = {
             "title": file.filename,
-            "content": final_json_data  # Supabase sẽ tự hiểu đây là JSONB
+            "content": final_json_data,  # Supabase sẽ tự hiểu đây là JSONB
+            "user_id": user_id, # Lưu đúng ID người chủ sở hữu
         }
-        
-        response = supabase.table("mindmaps").insert(db_insert).execute()
-        
-        # Bước 3: Trả về chính Object đó cho Frontend
-        return final_json_data
 
+        supabase.table("mindmaps").insert(db_insert).execute()
+        return final_json_data
     except Exception as e:
         print(f"Error: {e}")
         # Nếu parse lỗi, hãy kiểm tra xem AI có trả về text thừa không
