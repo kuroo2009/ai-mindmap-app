@@ -57,6 +57,17 @@ html, body {
     margin: auto;
     background-color: #eaeaea;
 }
+.username-input{
+    margin-left: 30px;
+}
+
+.email-input{
+    margin-left: 30px;
+}
+
+.password-input{
+    margin-left: 30px;
+}
 
 .input img{
     margin: 0 30px;
