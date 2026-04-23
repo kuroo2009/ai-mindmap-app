@@ -9,6 +9,7 @@ const LoginSignup = () => {
   return (
     <div className="container">
       <div className="header">
+        <br/>
         <div className="text">{action}</div>
         <div className="underline"></div>
       </div>
@@ -34,6 +35,8 @@ const LoginSignup = () => {
         <div className="forgot-password">
         Forgot Password? <span>Click here</span>
       </div>}
+      {action==="Sign Up"?<div className="space"></div>:
+      <div className="summit-container"></div>}
 
       <div className="submit-container">
         <div className={action==="Login"?"submit gray": "submit"} onClick={() => {setAction("Sign Up")}}>Sign Up</div>

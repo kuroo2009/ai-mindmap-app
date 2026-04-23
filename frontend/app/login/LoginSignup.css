@@ -1,11 +1,23 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background-color: #f0f2f5; /* Thay mã màu của bạn ở đây */
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
 .container{
     display: flex;
     flex-direction: column;
     margin: auto;
-    margin-top: 200px;
-    width: 600px;
-    padding-bottom: 30px;
+    width: 100%;
     background-color: cyan;
+    height: 100%;
 }
 
 .header{
@@ -61,10 +73,9 @@
 }
 
 .forgot-password{
-    padding-left: 62px;
     margin-top: 27px;
     color:#797979;
-    font-size: 18px;
+    margin: auto;
 }
 
 .forgot-password span{
@@ -75,7 +86,12 @@
 .submit-container{
     display: flex;
     gap:30px;
-    margin: 60px auto;
+    margin: auto;
+    margin-top: -10px;
+}
+
+.space{
+    margin-top: 50px;
 }
 
 .submit{
