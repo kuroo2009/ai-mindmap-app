@@ -140,17 +140,21 @@ async def get_history(user_id: str = Depends(get_current_user_id)):
 @app.get("/mindmaps/{id}")
 async def get_mindmap_detail(id: str, user_id: str = Depends(get_current_user_id)):
     try:
+        print(f"--- DEBUG: Đang truy vấn Mindmap ID: {id} cho User: {user_id} ---")
         query_id = int(id) if id.isdigit() else id
         response = (
             supabase.table("mindmaps")
             .select("*")
             .eq("id", query_id)
             .eq("user_id", user_id)  # Chỉ trả về nếu là chủ sở hữu mới xem được
-            .single()
             .execute()
         )
         if not response.data or len(response.data) == 0:
-            raise HTTPException(status_code=404, detail="Không tìm thấy bản đồ")
+            print("--- DEBUG: Không tìm thấy bản ghi nào khớp! ---")
+            raise HTTPException(
+                status_code=404, 
+                detail="Không tìm thấy bản đồ hoặc bạn không có quyền truy cập."
+            )
         return response.data[0]
     except Exception as e:
         print(f"Lỗi truy vấn: {e}")
