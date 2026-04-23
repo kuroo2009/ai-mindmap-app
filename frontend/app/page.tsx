@@ -5,6 +5,7 @@ import Quiz from '../components/Quiz';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import HistoryDashboard from '../components/history'; 
 import axios from 'axios'; // Đảm bảo đã cài axios
+import Link from 'next/link';
 
 interface AISummaryData {
   Mindmap: any[];
@@ -68,7 +69,14 @@ export default function Home() {
   return (
     <main className="flex flex-col items-center p-6 min-h-screen bg-slate-50">
       <h1 className="text-3xl font-bold mb-8 text-blue-600">AI Mindmap Learning</h1>
-      
+      // Phần đăng nhập
+      <nav className="w-full flex justify-end p-4">
+        <Link href="/login">
+          <button className="px-6 py-2 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition">
+            Đăng nhập
+          </button>
+        </Link>
+      </nav>
       {/* KHU VỰC UPLOAD */}
       <div className="w-full max-w-4xl mb-10 p-6 bg-white rounded-lg shadow-md border-2 border-dashed border-blue-100">
         <input 
