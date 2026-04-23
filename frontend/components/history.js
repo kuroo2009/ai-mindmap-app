@@ -10,7 +10,11 @@ const HistoryDashboard = ({ onSelectMindmap }) => {
     const fetchHistory = async () => {
       try {
         const API_URL = "https://ai-mindmap-eqi0.onrender.com"; 
-        const res = await axios.get(`${API_URL}/history`);
+        const res = await axios.get(`${API_URL}/history`, {
+          headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+          }
+        });
         console.log("Danh sách lịch sử nhận được:", res.data); // Xem ở F12 Console
         setHistory(res.data);
       } catch (err) {
