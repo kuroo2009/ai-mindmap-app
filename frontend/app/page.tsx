@@ -47,17 +47,25 @@ export default function Home() {
           'Authorization': `Bearer ${session?.access_token}`
         }
       });
+    let finalContent = res.data.content;
+      if (typeof finalContent === 'string') {
+        finalContent = JSON.parse(finalContent);
+      }
 
-      // Backend trả về { id, title, content, ... }. Ta lấy phần content.
-      setData(res.data.content); 
-      setShowQuiz(false); // Reset lại view về sơ đồ
-      window.scrollTo({ top: 0, behavior: 'smooth' }); // Cuộn lên đầu để xem
-    } catch (error) {
-  if (error instanceof Error) {
-    console.log(error.message);
+      if (finalContent) {
+      setData(finalContent); 
+      setShowQuiz(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      alert("Dữ liệu bản đồ bị trống!");
+    }
+  } catch (error) {
+    console.error("Lỗi lấy chi tiết:", error);
+    alert("Không thể tải bản đồ này. Kiểm tra console để biết chi tiết.");
+  } finally {
+    setLoading(false); // <--- QUAN TRỌNG: Phải tắt loading dù thành công hay thất bại
   }
-}
-  };
+};
 
   // 2. Upload file (Đồng bộ với Backend mới)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

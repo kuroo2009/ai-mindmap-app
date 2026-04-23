@@ -149,9 +149,9 @@ async def get_mindmap_detail(id: str, user_id: str = Depends(get_current_user_id
             .single()
             .execute()
         )
-        if not response.data:
+        if not response.data or len(response.data) == 0:
             raise HTTPException(status_code=404, detail="Không tìm thấy bản đồ")
-        return response.data
+        return response.data[0]
     except Exception as e:
         print(f"Lỗi truy vấn: {e}")
         raise HTTPException(status_code=500, detail="Lỗi truy vấn")
