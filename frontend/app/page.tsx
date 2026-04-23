@@ -46,13 +46,16 @@ export default function Home() {
     if (!e.target.files?.[0]) return;
     setLoading(true);
     // Lấy Token từ Supabase Session
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     const token = session?.access_token;
 
+    // Debug thử xem token có tồn tại không (F12 Console)
+    console.log("Token hiện tại:", token);
+
     if (!token) {
-    alert("Vui lòng đăng nhập để sử dụng tính năng này!");
-    setLoading(false);
-    return;
+      alert("Vui lòng đăng nhập để sử dụng tính năng này!");
+      setLoading(false);
+      return;
     }
 
     const formData = new FormData();
@@ -67,6 +70,12 @@ export default function Home() {
         'Authorization': `Bearer ${token}`
         }
       });
+      
+      if (res.status === 401) {
+      alert("Backend báo lỗi: Chưa đăng nhập hoặc Token hết hạn");
+      return;
+      }
+
       const result = await res.json();
       
       if (result.error) {

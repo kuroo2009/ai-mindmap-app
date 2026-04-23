@@ -61,15 +61,19 @@ async def ask_ai(text_content):
 
 # Hàm kiểm tra Token (Dependency)
 async def get_current_user_id(authorization: str = Header(None)):
-    if not authorization:
+    print(f"Authorization Header nhận được: {authorization}")
+    if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Bạn chưa đăng nhập!")
     
+    # Tách chữ 'Bearer ' ra để lấy token
+    token = authorization.replace("Bearer ", "")
+
     try:
-        # Tách chữ 'Bearer ' ra để lấy token
-        token = authorization.replace("Bearer ", "")
         # Hỏi Supabase xem token này là của ai
-        user_info = supabase.auth.get_user(token)
-        return user_info.user.id
+        user = supabase.auth.get_user(token)
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+        return user.user.id
     except Exception as e:
         print(f"Auth Error: {e}")
         raise HTTPException(status_code=401, detail="Phiên đăng nhập hết hạn")
