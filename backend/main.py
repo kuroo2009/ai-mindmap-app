@@ -127,6 +127,7 @@ async def get_history(user_id: str = Depends(get_current_user_id)):
         response = (
             supabase.table("mindmaps")
             .select("id, title, created_at")
+            .eq("user_id", user_id)
             .order("created_at", desc=True)
             .execute()
         )
