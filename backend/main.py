@@ -71,8 +71,6 @@ async def get_current_user_id(authorization: str = Header(None)):
     try:
         # Hỏi Supabase xem token này là của ai
         user = supabase.auth.get_user(token)
-        if user is None:
-            raise HTTPException(status_code=401, detail="User not found")
         return user.user.id
     except Exception as e:
         print(f"Auth Error: {e}")
@@ -84,7 +82,7 @@ async def handle_upload(file: UploadFile = File(...),
     contents = await file.read()
     text = ""
 
-    # 1. Trích xuất Text
+    # Trích xuất Text
     if file.filename.endswith(".pdf"):
         doc = fitz.open(stream=contents, filetype="pdf")
         for page in doc:
@@ -99,47 +97,60 @@ async def handle_upload(file: UploadFile = File(...),
 
     # 2. Gửi sang AI và xử lý JSON
     ai_result_raw = await ask_ai(text)
+    if not ai_result_raw:
+         raise HTTPException(status_code=500, detail="AI không trả về kết quả.")
     try:
-        # Bước 1: Parse chuỗi AI trả về thành Dictionary (Object Python)
-        # Nếu ai_result_raw đã là chuỗi JSON, json.loads sẽ làm sạch nó
+        # Chuyển chuỗi AI trả về thành Object Python
         final_json_data = json.loads(ai_result_raw)
-    except Exception as e:
-        print(f"JSON Parse Error: {e}")
-        # Bước 2: Lưu vào Supabase
-        # Đảm bảo truyền 'final_json_data' (là Dictionary), KHÔNG truyền 'ai_result_raw' (là String)
+
+        # LƯU VÀO DATABASE (Nằm sau khi parse thành công)
         db_insert = {
             "title": file.filename,
             "content": final_json_data,  # Supabase sẽ tự hiểu đây là JSONB
             "user_id": user_id, # Lưu đúng ID người chủ sở hữu
         }
-    try:
-        response = supabase.table("mindmaps").insert(db_insert).execute()
+        supabase.table("mindmaps").insert(db_insert).execute()
+
         return final_json_data
+    
+    except json.JSONDecodeError:
+        print("Lỗi định dạng JSON từ AI")
+        return {"error": "AI trả về dữ liệu không đúng định dạng JSON", "raw": ai_result_raw}
     except Exception as e:
-        print(f"Error: {e}")
-        raise HTTPException(status_code=500, detail="Không thể lưu vào lịch sử")
-        # Nếu parse lỗi, hãy kiểm tra xem AI có trả về text thừa không
-        return {"error": str(e), "raw": ai_result_raw}
+        print(f"Lỗi khi lưu Database: {e}")
+        raise HTTPException(status_code=500, detail="Lỗi lưu trữ dữ liệu")
 
 # 1. API lấy danh sách tất cả mindmap (chỉ lấy tiêu đề và ID để nhẹ data)
 @app.get("/history")
-async def get_history():
+async def get_history(user_id: str = Depends(get_current_user_id)):
     try:
-        # Lấy id, title và thời gian tạo, sắp xếp mới nhất lên đầu
-        response = supabase.table("mindmaps").select("id, title, created_at").order("created_at", desc=True).execute()
+        response = (
+            supabase.table("mindmaps")
+            .select("id, title, created_at")
+            .order("created_at", desc=True)
+            .execute()
+        )
         return response.data
     except Exception as e:
+        print(f"Lỗi lấy lịch sử: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# 2. API lấy chi tiết nội dung của một mindmap cụ thể theo ID
+
 @app.get("/mindmaps/{id}")
-async def get_mindmap_detail(id: str):
+async def get_mindmap_detail(id: str, user_id: str = Depends(get_current_user_id)):
     try:
         query_id = int(id) if id.isdigit() else id
-        response = supabase.table("mindmaps").select("*").eq("id", query_id).single().execute()
+        response = (
+            supabase.table("mindmaps")
+            .select("*")
+            .eq("id", query_id)
+            .eq("user_id", user_id)  # Chỉ trả về nếu là chủ sở hữu mới xem được
+            .single()
+            .execute()
+        )
         if not response.data:
             raise HTTPException(status_code=404, detail="Không tìm thấy bản đồ")
         return response.data
     except Exception as e:
         print(f"Lỗi truy vấn: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Lỗi truy vấn")
