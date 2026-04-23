@@ -69,7 +69,7 @@ export default function Home() {
   return (
     <main className="flex flex-col items-center p-6 min-h-screen bg-slate-50">
       <h1 className="text-3xl font-bold mb-8 text-blue-600">AI Mindmap Learning</h1>
-      // Phần đăng nhập
+      {/* Phần đăng nhập */}
       <nav className="w-full flex justify-end p-4">
         <Link href="/login">
           <button className="px-6 py-2 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition">
