@@ -39,7 +39,12 @@ async def ask_ai(text_content):
         messages=[
             {
                 "role": "system", 
-                "content": "Bạn là chuyên gia giáo dục. Hãy tóm tắt văn bản thành JSON gồm 'Mindmap' (term, short_desc, detail, metaphor, example) và 'quizzes' (question, options, correct_answer). CHỈ TRẢ VỀ DỮ LIỆU JSON, KHÔNG GIẢI THÍCH, KHÔNG CHÀO HỎI."
+                "content": """Bạn là chuyên gia giáo dục. Hãy tóm tắt văn bản thành JSON.
+                Phần 'Mindmap' phải có cấu trúc cây lồng nhau:
+                - Mỗi node gồm: 'name' (tiêu đề), 'children' (danh sách các node con).
+                - Cấu trúc: Root -> Branch -> Sub-branch.
+                Phần 'quizzes' giữ nguyên mảng: question, options, correct_answer.
+                CHỈ TRẢ VỀ JSON."""
             },
             {
                 "role": "user", 
@@ -48,6 +53,7 @@ async def ask_ai(text_content):
         ],
         response_format={ "type": "json_object" }
     )
+    return response.choices[0].message.content
     
     # Lấy nội dung thô từ AI
     content = response.choices[0].message.content
