@@ -35,7 +35,7 @@ client = OpenAI(
 
 async def ask_ai(text_content):
     response = client.chat.completions.create(
-        model="openai/gpt-oss-20b:free", 
+        model="google/gemma-4-26b-a4b-it:free", 
         messages=[
             {
                 "role": "system", 
