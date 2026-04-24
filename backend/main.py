@@ -103,11 +103,16 @@ async def handle_upload(file: UploadFile = File(...),
     if not text.strip():
         return {"error": "Không thể trích xuất văn bản từ file."}
 
-    # 2. Gửi sang AI và xử lý JSON
-    ai_result_raw = await ask_ai(text)
-    print(f"DEBUG AI: {ai_result_raw}") # Xem log trên Render để bắt bệnh
-    if not ai_result_raw:
-         raise HTTPException(status_code=500, detail="AI không trả về kết quả.")
+    try:
+        # Gửi sang AI
+        ai_result_raw = await ask_ai(text)
+    except Exception as ai_err:
+        print(f"Lỗi gọi AI: {ai_err}")
+        # Nếu AI sập, trả về lỗi 502 (Bad Gateway) thay vì để server sập theo
+        raise HTTPException(
+            status_code=502, 
+            detail="Máy chủ AI hiện đang bận hoặc gặp sự cố. Vui lòng thử lại sau ít phút."
+        )
     try:
         # Chuyển chuỗi AI trả về thành Object Python
         final_json_data = json.loads(ai_result_raw)
