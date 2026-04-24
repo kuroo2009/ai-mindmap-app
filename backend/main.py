@@ -53,7 +53,6 @@ async def ask_ai(text_content):
         ],
         response_format={ "type": "json_object" }
     )
-    return response.choices[0].message.content
     
     # Lấy nội dung thô từ AI
     content = response.choices[0].message.content
