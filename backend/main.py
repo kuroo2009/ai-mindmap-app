@@ -76,7 +76,10 @@ async def get_current_user_id(authorization: str = Header(None)):
     try:
         # Hỏi Supabase xem token này là của ai
         user = supabase.auth.get_user(token)
-        return user.user.id
+        if hasattr(user, 'user') and user.user:
+            return user.user.id
+        raise HTTPException(status_code=401, detail="Token không hợp lệ")
+    
     except Exception as e:
         print(f"Auth Error: {e}")
         raise HTTPException(status_code=401, detail="Phiên đăng nhập hết hạn")
@@ -102,6 +105,7 @@ async def handle_upload(file: UploadFile = File(...),
 
     # 2. Gửi sang AI và xử lý JSON
     ai_result_raw = await ask_ai(text)
+    print(f"DEBUG AI: {ai_result_raw}") # Xem log trên Render để bắt bệnh
     if not ai_result_raw:
          raise HTTPException(status_code=500, detail="AI không trả về kết quả.")
     try:

@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 interface AISummaryData {
-  Mindmap: any[];
+  Mindmap: any;
   quizzes: any[];
 }
 

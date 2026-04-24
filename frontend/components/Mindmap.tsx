@@ -27,8 +27,14 @@ export default function Mindmap({ nodesData }: { nodesData: any }) {
     if (!svgRef.current || !nodesData) return;
 
     try {
+      // Kiểm tra nếu nodesData là mảng, lấy phần tử đầu tiên
+      const actualData = Array.isArray(nodesData) ? nodesData[0] : nodesData;
+      if (!actualData || !actualData.name) {
+      console.error("Dữ liệu Mindmap không hợp lệ:", actualData);
+      return;
+      }
       // 1. Chuyển JSON thành Markdown
-      const markdown = jsonToMarkdown(nodesData);
+      const markdown = jsonToMarkdown(actualData);
       
       // 2. Transform Markdown sang định dạng của Markmap
       const { root } = transformer.transform(markdown);
