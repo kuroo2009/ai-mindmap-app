@@ -13,10 +13,6 @@ from supabase import create_client, Client
 load_dotenv()
 
 app = FastAPI()
-origins = [
-    "https://ai-mindmap-1xcxzxh4g-kuroo2009s-projects.vercel.app", # Tên miền Vercel của bạn
-    "http://localhost:3000", # Để bạn vẫn có thể test ở máy local
-]
 
 app.add_middleware(
     CORSMiddleware,
