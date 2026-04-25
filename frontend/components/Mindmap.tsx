@@ -25,13 +25,17 @@ export default function Mindmap({ nodesData }: { nodesData: any }) {
 
   useEffect(() => {
     if (!svgRef.current || !nodesData) return;
-
+    console.log("Dữ liệu nhận được tại Mindmap Component:", nodesData);
     try {
-      // Kiểm tra nếu nodesData là mảng, lấy phần tử đầu tiên
-      const actualData = Array.isArray(nodesData) ? nodesData[0] : nodesData;
+      let actualData = Array.isArray(nodesData) ? nodesData[0] : nodesData;
+      // Nếu dữ liệu vẫn chưa có .name, có thể nó bị bọc thêm 1 lớp nữa
+      if (actualData && !actualData.name && actualData.Mindmap) {
+        actualData = actualData.Mindmap;
+      }
+      // Kiểm tra nếu nodesData là mảng, lấy phần tử đầu tiên để xử lý. Nếu không phải mảng, dùng trực tiếp.
       if (!actualData || !actualData.name) {
-      console.error("Dữ liệu Mindmap không hợp lệ:", actualData);
-      return;
+        console.error("Dữ liệu Mindmap không hợp lệ:", actualData);
+        return;
       }
       // 1. Chuyển JSON thành Markdown
       const markdown = jsonToMarkdown(actualData);

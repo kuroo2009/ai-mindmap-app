@@ -114,18 +114,35 @@ async def handle_upload(file: UploadFile = File(...),
             detail="Máy chủ AI hiện đang bận hoặc gặp sự cố. Vui lòng thử lại sau ít phút."
         )
     try:
-        # Chuyển chuỗi AI trả về thành Object Python
-        final_json_data = json.loads(ai_result_raw)
+        # 1. Làm sạch và load JSON
+        clean_json = ai_result_raw.strip()
+        if "```json" in clean_json:
+            clean_json = clean_json.split("```json")[1].split("```")[0].strip()
+        
+        final_json_data = json.loads(clean_json)
 
-        # LƯU VÀO DATABASE (Nằm sau khi parse thành công)
+        # 2. CHUẨN HÓA KEY (Quan trọng nhất)
+        # Tìm xem có key nào mang máng là Mindmap không
+        standard_data = {"Mindmap": None, "quizzes": final_json_data.get("quizzes", [])}
+        
+        for key in final_json_data.keys():
+            if key.lower() == "mindmap":
+                standard_data["Mindmap"] = final_json_data[key]
+                break
+        
+        # Nếu AI không trả về Mindmap hoặc trả về null, tạo 1 nút giả để không lỗi
+        if not standard_data["Mindmap"]:
+            standard_data["Mindmap"] = {"name": "Tài liệu của bạn", "children": []}
+
+        # 3. Lưu standard_data vào database
         db_insert = {
             "title": file.filename,
-            "content": final_json_data,  # Supabase sẽ tự hiểu đây là JSONB
-            "user_id": user_id, # Lưu đúng ID người chủ sở hữu
+            "content": standard_data, 
+            "user_id": user_id,
         }
         supabase.table("mindmaps").insert(db_insert).execute()
 
-        return final_json_data
+        return standard_data # Trả về bản đã chuẩn hóa
     
     except json.JSONDecodeError:
         print("Lỗi định dạng JSON từ AI")
